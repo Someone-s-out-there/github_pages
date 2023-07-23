@@ -1,7 +1,8 @@
-title: Jekyll AsciiDoc Quickstart
+title: Personal Blog
 # uncomment baseurl if you want to publish the site to a subfolder
 #baseurl: /blog
-description: The Jekyll AsciiDoc Quickstart project is a leg-up in starting your own website hosted on GitHub with content based in AsciiDoc.
+description: my personal blog to document my own personal projects
+
 exclude:
   - LICENSE.adoc
   - README.adoc
@@ -16,3 +17,4 @@ asciidoctor:
     - idseparator=_
     - source-highlighter=coderay
     - icons=font
+excerpt_separator: "\n//more\n"

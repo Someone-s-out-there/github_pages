@@ -1,4 +1,4 @@
-= Jekyll AsciiDoc Quickstart
+= Personal Blog
 :experimental:
 ifndef::env-github[:toc:]
 

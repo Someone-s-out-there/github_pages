@@ -42,7 +42,14 @@
     <!-- Main Blog Content -->
     <div class="large-9 columns" role="content">
 
-        {{ content }}
+
+        <h3> Posts</h3>
+        <ul id="posts" class="posts nav">
+            {% for post in site.posts %}
+            <li><a href="{{ post.url | prepend:site.baseurl }}">{{ post.navtitle }}</a></li>
+            <p> {{post.excerpt}} </p>
+            {% endfor %}
+        </ul>
 
     </div>
 
@@ -53,11 +60,6 @@
     <aside class="large-3 columns">
 
         <h4>Posts</h4>
-        <ul id="posts" class="posts nav">
-            {% for post in site.posts limit: 5 %}
-            <li><a href="{{ post.url | prepend:site.baseurl }}">{{ post.navtitle }}</a></li>
-            {% endfor %}
-        </ul>
 
         <div class="panel">
             <h5>Tags</h5>
@@ -70,8 +72,6 @@
                  </ul>
                {% endfor %}
         </div>
-        
-
     </aside>
 
     <!-- End Sidebar -->

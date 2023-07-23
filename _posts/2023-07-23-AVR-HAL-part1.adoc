@@ -1,0 +1,31 @@
+= AVR HAL Part 1
+:showtitle:
+:page-navtitle: AVR HAL Part 1
+:page-excerpt: first part of the AVR HAL series. this is partly intro and partly the basic structure 
+:page-root: ../../../
+:page-tags: [AVR, HAL, AVR HAL]
+
+== What is this
+
+This is a personal project to make my own HAL for the AVR chips. until i've fleshed out the hal enough it will *only* support the Atmega328P.
+
+The HAL will be written in C++ with classes and namespaces. this is mostly as a proof of concept to see if its reasonable for private experiments. the HAL will be hosted on Github https://github.com/Someone-s-out-there/AVR-HAL[Github]
+
+== What it should be able of doing.
+
+The HAL will be considered "finished" when it can configure all the periphirals of the Atmega328P. 
+this means that it will be able to control
+
+- 2 8-bit timers
+- 1 16-bit timers
+- 6 PWM channels
+- 8 channel 10-bit adc
+- 1 usart
+- 1 SPI
+- 1 TWI/I2C
+- 1 WDT
+- Interrupts
+
+When this is finished i hope to be able to extend the HAL to also cover the Attiny 0 and 1-series chips i have. how ever they use a different architecture
+
+== 
