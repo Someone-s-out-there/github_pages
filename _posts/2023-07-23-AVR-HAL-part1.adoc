@@ -24,7 +24,7 @@ this means that it will be able to control
 * [ ] 1 SPI
 * [ ] 1 TWI/I2C
 * [ ] 1 WDT
-* [ ] 23 iopins
+* [ ] 23 IO-pins
 * [ ] Interrupts
 
 When this is finished i hope to be able to extend the HAL to also cover the Attiny 0 and 1-series chips i have. how ever they use a different architecture
