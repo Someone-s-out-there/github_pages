@@ -9,23 +9,130 @@
 
 This is a personal project to make my own HAL for the AVR chips. until i've fleshed out the hal enough it will *only* support the Atmega328P.
 
-The HAL will be written in C++ with classes and namespaces. this is mostly as a proof of concept to see if its reasonable for private experiments. the HAL will be hosted on Github https://github.com/Someone-s-out-there/AVR-HAL[Github]
+The HAL will be written in C++ with classes and namespaces. this is mostly as a proof of concept to see if its reasonable for private experiments. the HAL will be hosted on https://github.com/Someone-s-out-there/AVR-HAL[Github]
 
 == What it should be able of doing.
 
 The HAL will be considered "finished" when it can configure all the periphirals of the Atmega328P. 
 this means that it will be able to control
 
-- 2 8-bit timers
-- 1 16-bit timers
-- 6 PWM channels
-- 8 channel 10-bit adc
-- 1 usart
-- 1 SPI
-- 1 TWI/I2C
-- 1 WDT
-- Interrupts
+* [ ] 2 8-bit timers
+* [ ] 1 16-bit timers
+* [ ] 6 PWM channels
+* [ ] 8 channel 10-bit adc
+* [ ] 1 usart
+* [ ] 1 SPI
+* [ ] 1 TWI/I2C
+* [ ] 1 WDT
+* [ ] 23 iopins
+* [ ] Interrupts
 
 When this is finished i hope to be able to extend the HAL to also cover the Attiny 0 and 1-series chips i have. how ever they use a different architecture
 
-== 
+== The beginnings
+
+I started making the HAL from the simplest point possible. getting to blinky. this had some minor complications however these were quickly resolved
+
+=== the target for this part
+
+The target for this part of the series is to get to a blinking led on either the arduino nano or arduino uno. when this works other periphirals can be implemented one at a time
+
+the journey to get a blinking led from scratch on the nano means I needed to write the code to flip the bits in the memory mapped io (MMIO) myself.
+now being a programmer means i was going to be lazy and use avr-libc to get the register locations. this means the HAL is build upon avr-libc. 
+
+=== Getting started.
+
+the first step was deciding how it was going to be structured. this meant getting a list together to start planning the layout and structure.
+when i had that list i could make the base for the folder structure which resulted in 
+
+hal/ +
+├─ IO/ +
+│  ├─ ALIAS/ +
+│  │  ├─ nano.hpp +
+│  │  ├─ uno.hpp +
+│  ├─ pins.cpp +
+│  ├─ pins.hpp +
+├─ periphirals/ +
+├─ utils/ +
+│  ├─ util.cpp +
+│  ├─ util.hpp +
+├─ HAL.h +
+test/ +
+├─ blinky/ +
+│  ├─ blinky +
+│  ├─ main.cpp +
+
+
+=== the Test
+
+the bliny folder in test contains the "test" for the IO pins driver to test if it can blink an led. the code is shown below
+
+[source, cpp]
+----
+
+#define F_CPU 16000000ul <1>
+
+#include <avr/io.h>
+#include <util/delay.h>
+#include "HAL/HAL.h"
+#include "HAL/IO/pins.hpp" <2>
+
+
+
+int main(){
+    pin p(&DDRB,&PORTB,&PINB,PB5); <3>
+    p.init(false,true); <4>
+    while (1)
+    {
+        p.set_pin(1); <5>
+        _delay_ms(500); <6>
+        p.set_pin(0); <5>
+        _delay_ms(500); <6> 
+
+    }
+}
+----
+<1> tells util/delay.h what frequency the cpu should be running at.
+<2> include the HAL for the io pins.
+<3> create a pin object p with the necesary DDR PORT and PIN registers and PB5 to define which pin 
+<4> initialize the pin as output with high level
+<5> set pin high or low
+<6> wait 500 milliseconds, this function comes from avr-libc
+
+=== the pin implementation
+
+the code for the pin class is in two places pin.cpp and pin.hpp
+[source, cpp]
+----
+// pin.hpp
+#include <avr/io.h>
+#include <avr/sfr_defs.h>
+
+class pin
+{
+private:
+    volatile uint8_t* _ddr; <1>
+    volatile uint8_t* _port; <2>
+    volatile uint8_t* _pin; <3>
+
+    uint8_t _pinnr;
+
+public:
+    pin(volatile uint8_t* ddr, volatile uint8_t* port, volatile uint8_t* pin, uint8_t pinnr); <4>
+    ~pin() = default;
+
+    void init(bool isinput, bool pullup); <5>
+    uint8_t get_pin();
+    void set_pin(uint8_t state);
+    void toggle_pin();
+};
+
+----
+<1> stores a pointer to the DDRx register passed in to the constructor
+<2> stores a pointer to the PORTx register passed in to the constructor
+<3> stores a pointer to the PINx register passed in to the constructor
+<4> constructor takes a pointer to DDRx, PORTx, PINx and the pin number. which is in the test case pin 5
+<5> these are currently the public functions. though `get_pin()` is currently untested
+
+
+
