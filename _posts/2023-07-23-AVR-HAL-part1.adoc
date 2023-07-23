@@ -134,5 +134,48 @@ public:
 <4> constructor takes a pointer to DDRx, PORTx, PINx and the pin number. which is in the test case pin 5
 <5> these are currently the public functions. though `get_pin()` is currently untested
 
+[source, cpp]
+----
+// pin.cpp
+#include <pins.hpp>
+
+
+pin::pin(volatile uint8_t* ddr, volatile uint8_t* port, volatile uint8_t* pin, uint8_t pinnr) : _ddr(ddr), _port(port), _pin(pin), _pinnr(pinnr) <1>
+{
+}
+
+void pin::init(bool isinput, bool pullup)
+{
+    *_ddr |= (!isinput << _pinnr); <2>
+    *_port |= (pullup << _pinnr);
+}
+
+inline uint8_t pin::get_pin()
+{
+    return bit_is_set(_pin, _pinnr);
+}
+
+inline void pin::set_pin(uint8_t state)
+{
+    if (state)
+    {
+        *_port |= (1 << _pinnr); <3>
+    }else{
+        *_port &=~(1 << _pinnr); <4>
+    }
+
+}
+
+inline void pin::toggle_pin()
+{
+    *_port ^= (1 << _pinnr); <5>
+}
+
+----
+<1> constructor does nothing special it just assigns the passed in variables to the locally stored one in the class.
+<2> setting the DDRx register to 0 sets it as an input setting it as 1 makes it an output. to ensure the is input variable does the correct thing it's inverted.
+<3> this sets a bit to 1
+<4> this clears a bit(sets it to 0) 
+<5> this uses an xor (^) operation to flip a bit independant of the rest of the register
 
 
