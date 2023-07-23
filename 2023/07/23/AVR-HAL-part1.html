@@ -1,0 +1,413 @@
+<!doctype html>
+<!--[if IE 9]>
+<html class="lt-ie10" lang="en"> <![endif]-->
+<html class="no-js" lang="en" data-useragent="Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVR HAL Part 1</title>
+    <meta name="description" content="my personal blog to document my own personal projects">
+    <meta name="author" content="Your name goes here">
+    <meta name="copyright" content="Maybe consider a Creative Commons license">
+    <link rel="stylesheet" href="../../../css/foundation.css">
+    <link rel="stylesheet" href="../../../css/font-awesome.css">
+    <link rel="stylesheet" href="../../../css/coderay.css">
+    <link rel="stylesheet" href="../../../css/asciidoctor.css">
+    <script src="../../../js/vendor/modernizr.js"></script>
+    <script src="../../../js/toc.js"></script>
+</head>
+<body>
+
+
+<!-- Nav Bar -->
+
+<nav class="top-bar" data-topbar>
+    <ul class="title-area">
+        <!-- Title Area -->
+        <li class="name">
+            <h1>
+                <a href="../../../">Personal Blog</a>
+            </h1>
+        </li>
+        <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+    </ul>
+</nav>
+<!-- End Nav -->
+
+
+<!-- Main Page Content and Sidebar -->
+
+<div class="row">
+
+    <!-- Main Blog Content -->
+    <div class="large-9 columns" role="content">
+
+        <h1>AVR HAL Part 1</h1>
+<div class="sect1">
+<h2 id="what_is_this">What is this</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is a personal project to make my own HAL for the AVR chips. until i&#8217;ve fleshed out the hal enough it will <strong>only</strong> support the Atmega328P.</p>
+</div>
+<div class="paragraph">
+<p>The HAL will be written in C++ with classes and namespaces. this is mostly as a proof of concept to see if its reasonable for private experiments. the HAL will be hosted on <a href="https://github.com/Someone-s-out-there/AVR-HAL">Github</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="what_it_should_be_able_of_doing">What it should be able of doing.</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The HAL will be considered "finished" when it can configure all the periphirals of the Atmega328P.
+this means that it will be able to control</p>
+</div>
+<div class="ulist checklist">
+<ul class="checklist">
+<li>
+<p><i class="fa fa-square-o"></i> 2 8-bit timers</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> 1 16-bit timers</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> 6 PWM channels</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> 8 channel 10-bit adc</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> 1 usart</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> 1 SPI</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> 1 TWI/I2C</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> 1 WDT</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> 23 IO-pins</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> Interrupts</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>When this is finished i hope to be able to extend the HAL to also cover the Attiny 0 and 1-series chips i have. how ever they use a different architecture</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="the_beginnings">The beginnings</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>I started making the HAL from the simplest point possible. getting to blinky. this had some minor complications however these were quickly resolved</p>
+</div>
+<div class="sect2">
+<h3 id="the_target_for_this_part">the target for this part</h3>
+<div class="paragraph">
+<p>The target for this part of the series is to get to a blinking led on either the arduino nano or arduino uno. when this works other periphirals can be implemented one at a time</p>
+</div>
+<div class="paragraph">
+<p>the journey to get a blinking led from scratch on the nano means I needed to write the code to flip the bits in the memory mapped io (MMIO) myself.
+now being a programmer means i was going to be lazy and use avr-libc to get the register locations. this means the HAL is build upon avr-libc.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="getting_started">Getting started.</h3>
+<div class="paragraph">
+<p>the first step was deciding how it was going to be structured. this meant getting a list together to start planning the layout and structure.
+when i had that list i could make the base for the folder structure which resulted in</p>
+</div>
+<div class="paragraph">
+<p>hal/<br>
+├─ IO/<br>
+│  ├─ ALIAS/<br>
+│  │  ├─ nano.hpp<br>
+│  │  ├─ uno.hpp<br>
+│  ├─ pins.cpp<br>
+│  ├─ pins.hpp<br>
+├─ periphirals/<br>
+├─ utils/<br>
+│  ├─ util.cpp<br>
+│  ├─ util.hpp<br>
+├─ HAL.h<br>
+test/<br>
+├─ blinky/<br>
+│  ├─ blinky<br>
+│  ├─ main.cpp<br></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="the_test">the Test</h3>
+<div class="paragraph">
+<p>the bliny folder in test contains the "test" for the IO pins driver to test if it can blink an led. the code is shown below</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cpp"><span class="preprocessor">#define</span> F_CPU <span class="integer">16000000</span>ul <i class="conum" data-value="1"></i><b>(1)</b>
+
+<span class="preprocessor">#include</span> <span class="include">&lt;avr/io.h&gt;</span>
+<span class="preprocessor">#include</span> <span class="include">&lt;util/delay.h&gt;</span>
+<span class="preprocessor">#include</span> <span class="include">&quot;HAL/HAL.h&quot;</span>
+<span class="preprocessor">#include</span> <span class="include">&quot;HAL/IO/pins.hpp&quot;</span> <i class="conum" data-value="2"></i><b>(2)</b>
+
+
+
+<span class="predefined-type">int</span> main(){
+    pin p(&amp;DDRB,&amp;PORTB,&amp;PINB,PB5); <i class="conum" data-value="3"></i><b>(3)</b>
+    p.init(<span class="predefined-constant">false</span>,<span class="predefined-constant">true</span>); <i class="conum" data-value="4"></i><b>(4)</b>
+    <span class="keyword">while</span> (<span class="integer">1</span>)
+    {
+        p.set_pin(<span class="integer">1</span>); <i class="conum" data-value="5"></i><b>(5)</b>
+        _delay_ms(<span class="integer">500</span>); <i class="conum" data-value="6"></i><b>(6)</b>
+        p.set_pin(<span class="integer">0</span>); <i class="conum" data-value="5"></i><b>(5)</b>
+        _delay_ms(<span class="integer">500</span>); <i class="conum" data-value="6"></i><b>(6)</b>
+
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>tells util/delay.h what frequency the cpu should be running at.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>include the HAL for the io pins.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>create a pin object p with the necesary DDR PORT and PIN registers and PB5 to define which pin</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>initialize the pin as output with high level</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>set pin high or low</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>wait 500 milliseconds, this function comes from avr-libc</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="the_pin_implementation">the pin implementation</h3>
+<div class="paragraph">
+<p>the code for the pin class is in two places pin.cpp and pin.hpp</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cpp"><span class="comment">// pin.hpp</span>
+<span class="preprocessor">#include</span> <span class="include">&lt;avr/io.h&gt;</span>
+<span class="preprocessor">#include</span> <span class="include">&lt;avr/sfr_defs.h&gt;</span>
+
+<span class="keyword">class</span> <span class="class">pin</span>
+{
+<span class="directive">private</span>:
+    <span class="directive">volatile</span> uint8_t* _ddr; <i class="conum" data-value="1"></i><b>(1)</b>
+    <span class="directive">volatile</span> uint8_t* _port; <i class="conum" data-value="2"></i><b>(2)</b>
+    <span class="directive">volatile</span> uint8_t* _pin; <i class="conum" data-value="3"></i><b>(3)</b>
+
+    uint8_t _pinnr;
+
+<span class="directive">public</span>:
+    pin(<span class="directive">volatile</span> uint8_t* ddr, <span class="directive">volatile</span> uint8_t* port, <span class="directive">volatile</span> uint8_t* pin, uint8_t pinnr); <i class="conum" data-value="4"></i><b>(4)</b>
+    ~pin() = <span class="keyword">default</span>;
+
+    <span class="directive">void</span> init(<span class="predefined-type">bool</span> isinput, <span class="predefined-type">bool</span> pullup); <i class="conum" data-value="5"></i><b>(5)</b>
+    uint8_t get_pin();
+    <span class="directive">void</span> set_pin(uint8_t state);
+    <span class="directive">void</span> toggle_pin();
+};</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>stores a pointer to the DDRx register passed in to the constructor</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>stores a pointer to the PORTx register passed in to the constructor</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>stores a pointer to the PINx register passed in to the constructor</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>constructor takes a pointer to DDRx, PORTx, PINx and the pin number. which is in the test case pin 5</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>these are currently the public functions. though <code>get_pin()</code> is currently untested</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cpp"><span class="comment">// pin.cpp</span>
+<span class="preprocessor">#include</span> <span class="include">&lt;pins.hpp&gt;</span>
+
+
+pin::pin(<span class="directive">volatile</span> uint8_t* ddr, <span class="directive">volatile</span> uint8_t* port, <span class="directive">volatile</span> uint8_t* pin, uint8_t pinnr) : _ddr(ddr), _port(port), _pin(pin), _pinnr(pinnr) <i class="conum" data-value="1"></i><b>(1)</b>
+{
+}
+
+<span class="directive">void</span> pin::init(<span class="predefined-type">bool</span> isinput, <span class="predefined-type">bool</span> pullup)
+{
+    *_ddr |= (!isinput &lt;&lt; _pinnr); <i class="conum" data-value="2"></i><b>(2)</b>
+    *_port |= (pullup &lt;&lt; _pinnr);
+}
+
+<span class="directive">inline</span> uint8_t pin::get_pin()
+{
+    <span class="keyword">return</span> bit_is_set(_pin, _pinnr);
+}
+
+<span class="directive">inline</span> <span class="directive">void</span> pin::set_pin(uint8_t state)
+{
+    <span class="keyword">if</span> (state)
+    {
+        *_port |= (<span class="integer">1</span> &lt;&lt; _pinnr); <i class="conum" data-value="3"></i><b>(3)</b>
+    }<span class="keyword">else</span>{
+        *_port &amp;=~(<span class="integer">1</span> &lt;&lt; _pinnr); <i class="conum" data-value="4"></i><b>(4)</b>
+    }
+
+}
+
+<span class="directive">inline</span> <span class="directive">void</span> pin::toggle_pin()
+{
+    *_port ^= (<span class="integer">1</span> &lt;&lt; _pinnr); <i class="conum" data-value="5"></i><b>(5)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>constructor does nothing special it just assigns the passed in variables to the locally stored one in the class.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>setting the DDRx register to 0 sets it as an input setting it as 1 makes it an output. to ensure the is input variable does the correct thing it&#8217;s inverted.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>this sets a bit to 1</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>this clears a bit(sets it to 0)</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>this uses an xor (^) operation to flip a bit independant of the rest of the register</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+
+    </div>
+
+    <!-- End Main Content -->
+
+    <!-- Sidebar -->
+
+    <aside class="large-3 columns">
+
+        <h4>Posts</h4>
+        <ul id="posts" class="posts nav">
+            
+            <li><a href="/2023/07/23/AVR-HAL-part1.html">AVR HAL Part 1</a></li>
+            
+        </ul>
+
+        <div class="panel">
+            <h5>Tags</h5>
+                
+                <h6>AVR</h3>
+                <ul>
+                
+                    <li><a href="/2023/07/23/AVR-HAL-part1.html">AVR HAL Part 1</a></li>
+                 
+                 </ul>
+               
+                <h6>HAL</h3>
+                <ul>
+                
+                    <li><a href="/2023/07/23/AVR-HAL-part1.html">AVR HAL Part 1</a></li>
+                 
+                 </ul>
+               
+                <h6>AVR HAL</h3>
+                <ul>
+                
+                    <li><a href="/2023/07/23/AVR-HAL-part1.html">AVR HAL Part 1</a></li>
+                 
+                 </ul>
+               
+        </div>
+        
+
+    </aside>
+
+    <!-- End Sidebar -->
+</div>
+
+<!-- End Main Content and Sidebar -->
+
+
+<!-- Footer -->
+
+<footer class="row">
+    <div class="large-12 columns">
+        <hr>
+        <div class="row">
+            <div class="large-12 columns">
+               <p></p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  messageStyle: "none",
+  tex2jax: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]],
+    ignoreClass: "nostem|nolatexmath"
+  },
+  asciimath2jax: {
+    delimiters: [["\\$", "\\$"]],
+    ignoreClass: "nostem|noasciimath"
+  },
+  TeX: { equationNumbers: { autoNumber: "none" } }
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>
+
+
+<script src="../../../js/vendor/jquery.js"></script>
+<script src="../../../js/foundation.min.js"></script>
+<script>
+$(document).foundation();
+var doc = document.documentElement;
+doc.setAttribute('data-useragent', navigator.userAgent);
+</script>
+</body>
+</html>
